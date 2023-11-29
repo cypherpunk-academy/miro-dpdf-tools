@@ -19,3 +19,26 @@ img {
   max-width: 100%;
   height: auto;
 }
+
+.dpdf-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: top;
+  justify-content: top;
+  width: 100%;
+  min-height: 100vh;
+
+  .group {
+    margin-top: 10px;
+  }
+
+  .label {
+    display: block;
+    font-size: 1em;
+    margin-bottom: var(--space-small);
+  }
+
+  .toggle {
+    margin-left: 10px;
+  }
+}
