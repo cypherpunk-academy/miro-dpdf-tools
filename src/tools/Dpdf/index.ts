@@ -1,5 +1,5 @@
 import Mirou from "../Mirou";
-import type { Coords, Paragraph } from "../../types";
+import type { Coords, Paragraph, Style } from "../../types";
 import type {
     Connector,
     ConnectorProps,
@@ -9,7 +9,7 @@ import type {
     WidgetMixin,
 } from "@mirohq/websdk-types";
 import romanize from "./romanize";
-import type { PartialWidgetMixin } from "../../types";
+import type { PartialWidgetMixin, Chapter } from "../../types";
 
 const textShapes = [
     "rectangle",
@@ -102,16 +102,30 @@ export class Dpdf {
 
     constructor() {
         this.mirou = new Mirou();
+
+        const globalThisMirou = globalThis as typeof globalThis & {
+            dpdf: Dpdf | null;
+            mirou: Mirou;
+        };
+
+        if (globalThisMirou.dpdf === undefined) {
+            globalThisMirou.dpdf = null;
+
+            const dpdf = new Dpdf();
+
+            globalThisMirou.dpdf = dpdf;
+            globalThisMirou.mirou = this.mirou;
+        }
     }
 
-    calculateRotation(coords1: Coords, coords2: Coords) {
+    private calculateRotation(coords1: Coords, coords2: Coords) {
         const dx = coords2.x - coords1.x;
         const dy = coords2.y - coords1.y;
         const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
         return (angle + 90) % 360;
     }
 
-    async getCoords(item: WidgetMixin) {
+    private async getCoords(item: WidgetMixin) {
         if (!item) throw new Error("Item is undefined.");
 
         return item.relativeTo === "parent_top_left"
@@ -122,7 +136,7 @@ export class Dpdf {
               };
     }
 
-    async getFrame() {
+    private async getFrame() {
         if (this.frame === null) {
             this.frame = (await this.mirou.getItems({ type: "frame" }))[0];
         }
@@ -130,13 +144,16 @@ export class Dpdf {
         return this.frame;
     }
 
-    async getChapter(num: number) {
+    private async getChapter(num: number) {
         return (await this.mirou.getItems({ shape: "star" })).find((item) =>
             item.content.includes(num.toString())
         );
     }
 
-    async addTrianglePointingToParagraphEnd(p: Paragraph, prevP: Paragraph) {
+    private async addTrianglePointingToParagraphEnd(
+        p: Paragraph,
+        prevP: Paragraph
+    ) {
         const firstSentence = p.sentences[0];
         const lastSentence = prevP.sentences[prevP.sentences.length - 1];
 
@@ -183,7 +200,7 @@ export class Dpdf {
         console.info(`Added start and end to Paragraph ${p.nr}.`);
     }
 
-    async getNextSentence(
+    private async getNextSentence(
         id: string,
         connectorIds: string[] = [],
         shapesOrTypes: string[] = [],
@@ -223,7 +240,7 @@ export class Dpdf {
         return null;
     }
 
-    getPlainTextFromHtml(htmlString: string) {
+    private getPlainTextFromHtml(htmlString: string) {
         const tempElement = document.createElement("div");
         tempElement.innerHTML = htmlString;
         return tempElement.textContent;
@@ -435,6 +452,41 @@ export class Dpdf {
             (item) =>
                 (item.style && item.style.strokeStyle === "dotted") || false
         );
+    }
+
+    private getContent = (html: string | string[]): string => {
+        const contentWithHtml = (
+            Array.isArray(html) ? html[0] : html
+        ) as string;
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = contentWithHtml;
+        return tempDiv.innerText;
+    };
+
+    async findChapters(): Promise<Chapter[]> {
+        const items = await this.mirou.getItems({
+            type: "shape",
+            shape: "star",
+        });
+
+        return items
+            .filter((item) => {
+                if (!item || !item.content || typeof item.content === "object")
+                    return false;
+
+                const content = this.getContent(item.content);
+
+                return content.match(/^[0-9]{1,2}/) !== null || false;
+            })
+            .map((item) => {
+                const content = this.getContent(item.content);
+
+                const nr = parseInt(content, 10);
+                const title = content.substring(nr.toString().length);
+
+                return { nr, title, id: item.id };
+            })
+            .sort((a, b) => a.nr - b.nr);
     }
 }
 

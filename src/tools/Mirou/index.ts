@@ -46,7 +46,9 @@ class Mirou {
 
     async getShapes() {
         const items = (await miro.board.get()) as Shape[];
-        const shapes = new Set(items.map((item) => item.shape));
+        const shapes = new Set(
+            items.map((item) => item.shape).filter((item) => item !== undefined)
+        );
         return shapes;
     }
 

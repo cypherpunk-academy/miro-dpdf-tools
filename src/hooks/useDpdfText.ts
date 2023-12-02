@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
-import type { HookMutationResult } from "../types";
+import type { Chapter, HookMutationResult } from "../types";
 import dpdf from "../tools/Dpdf";
 
-type Invoke = () => void;
+type Invoke = (chapter: Chapter) => void;
 type Result = {
     text: string;
+    title: string;
 };
 type Info = {
     reading: boolean;
@@ -12,26 +13,29 @@ type Info = {
 
 const useDpdfText = (): HookMutationResult<Invoke, Result, Info> => {
     const [text, setText] = useState<string>("");
+    const [title, setTitle] = useState<string>("");
     const [reading, setReading] = useState<boolean>(false);
-    const [shouldModify, setShouldModify] = useState<boolean>(false);
+    const [shouldRead, setShouldRead] = useState<number | null>(null);
 
     useEffect(() => {
-        if (shouldModify === true && reading === false) {
+        if (shouldRead !== null && reading === false) {
             setReading(true);
-            setShouldModify(false);
 
-            dpdf.syncParagraphsOfChapter(1).then((text) => {
+            dpdf.syncParagraphsOfChapter(shouldRead).then((text) => {
                 setText(text.paragraphInPlainText);
                 setReading(false);
             });
-        }
-    }, [shouldModify, reading]);
 
-    const invoke = useCallback(async () => {
-        setShouldModify(true);
+            setShouldRead(null);
+        }
+    }, [shouldRead, reading]);
+
+    const invoke = useCallback(async (chapter: Chapter) => {
+        setShouldRead(chapter.nr);
+        setTitle(`${chapter.nr} ${chapter.title}`);
     }, []);
 
-    return [invoke, { text }, { reading }];
+    return [invoke, { text, title }, { reading }];
 };
 
 export default useDpdfText;

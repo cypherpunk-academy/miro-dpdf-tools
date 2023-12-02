@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "license": "MIT",
   "scripts": {
+    "dev": "vite",
     "start": "vite",
     "build": "vite build",
     "serve": "vite preview",
@@ -10,6 +11,9 @@
     "build:packages": "rm -rf node_modules && yarn && yarn build"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.5.1",
+    "@fortawesome/free-solid-svg-icons": "^6.5.1",
+    "@fortawesome/react-fontawesome": "^0.2.0",
     "file-saver": "^2.0.5",
     "miro-mirou": "../miro-mirou/",
     "mirotone": "5",

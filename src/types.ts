@@ -6,6 +6,8 @@ export type HookMutationResult<
     Info
 > = [Invoke: Invoke, Return: Return, Info: Info];
 
+export type HookQueryResult<Return, Info> = [Return: Return, Info: Info];
+
 export interface Coords {
     x: number;
     y: number;
@@ -36,4 +38,11 @@ export interface PartialWidgetMixin {
 export type Paragraph = {
     sentences: (Shape | StickyNote)[];
     nr: number;
+};
+
+export type Chapter = {
+    nr: number;
+    title?: string;
+    paragraphs?: Paragraph[];
+    id?: string;
 };
